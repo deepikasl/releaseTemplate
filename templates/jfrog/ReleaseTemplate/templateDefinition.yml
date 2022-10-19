@@ -1,0 +1,49 @@
+resources:  
+  - name: {{ .Values.template_repository.name }}
+    type: GITRepo
+    configuration:
+      path: {{ .Values.template_repository.path }}
+      gitProvider: {{ .Values.git_integration_name }}
+      branches:
+        include: {{ .Values.template_repository.branch }}
+
+  - name: goTemplateBinary
+    type: FileSpec
+    configuration:
+      sourceArtifactory: art
+      pattern: "deepika-artifacts/pipelines-template"
+      recursive: false
+      flat: true
+      
+pipelines:
+  - name: {{ .Values.release_template.pipelineName }}
+    configuration:
+      environmentVariables:
+        readOnly:
+          templateTarget: {{ .Values.release_template.path }}
+          version: {{ .Values.release_template.version }}
+    steps:
+      - name: {{ .Values.release_template.stepName }}
+        type: Bash
+        configuration:
+          inputResources:
+            - name: goTemplateBinary
+            - name: tempRepo
+        execution:
+          onExecute:
+            - pushd $res_tempRepo_resourcePath
+            - pushd $templateTarget
+            - touch values.yml
+            - cp -vr $res_myTemplate_resourcePath/pipelines-template ./pipelines-template
+            - chmod +x ./pipelines-template
+            - ./pipelines-template apply --values-file ./values.yml --template-file ./templateDefinition.yml --output-file output.yml
+            - jfrog rt upload ./templateDefinition.yml pipeline-artifacts/$templateTarget/$version/templateDefinition.yml --recursive=true
+            - |
+              if test -f "./values.yml.example"; then
+                jfrog rt upload ./values.yml.example pipeline-artifacts/$templateTarget/$version/values.yml.example --recursive=true
+              fi
+            - |
+              if test -f "./readme.md"; then
+                jfrog rt upload ./readme.md pipeline-artifacts/$templateTarget/$version/readme.md --recursive=true
+              fi
+            - popd
