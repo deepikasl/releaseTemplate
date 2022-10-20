@@ -28,7 +28,7 @@ pipelines:
         configuration:
           inputResources:
             - name: goTemplateBinary
-            - name: tempRepo
+            - name: {{ .Values.template_repository.name }}
         execution:
           onExecute:
             - pushd $res_tempRepo_resourcePath
