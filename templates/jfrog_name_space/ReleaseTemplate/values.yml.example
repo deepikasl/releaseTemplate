@@ -1,12 +1,12 @@
 template_repository:
-  name: 'my_temp_repo'
-  path: 'deepikasl/old_templates'
+  name: my_temp_repo
+  path: deepikasl/old_templates
   branch: 'master
   
-git_integration_name: 'deepikaGithub'
+git_integration_name: deepikaGithub
 
 release_template:
-  pipelineName: 'Release_Template'
-  stepName: 'validate_and_release_template'
-  path: 'templates/jfrog_name_space/myPipelineTemplate'
-  version: '0.0.1'
+  pipelineName: Release_Template
+  stepName: validate_and_release_template
+  path: templates/jfrog_name_space/myPipelineTemplate
+  version: 0.0.1
