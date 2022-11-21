@@ -11,7 +11,7 @@ resources:
     type: FileSpec
     configuration:
       sourceArtifactory: art
-      pattern: "deepika-artifacts/pipelines-template"
+      pattern: {{rootBucket}}/tools/pipelines-template
       recursive: false
       flat: true
       
@@ -48,7 +48,7 @@ pipelines:
             - read -a pathArr <<< "$templateTarget"
             - |
               if [[ ${pathArr[0]} != 'templates' ]]; then
-                echo "templateTarget- $templateTarget should be in this format templates/<namespace>/name_of_the_template>"
+                echo "templateTarget- $templateTarget should be in this format templates/<name_space>/<name_of_the_template>"
               elseif [[ ${pathArr[1]} == 'jfrog' ]]; then
                 echo "namespace cannot be jfrog, please choose a different namespace"
               fi
@@ -58,13 +58,13 @@ pipelines:
             - cp -vr $res_goTemplateBinary_resourcePath/pipelines-template ./pipelines-template
             - chmod +x ./pipelines-template
             - ./pipelines-template apply --values-file ./values.yml --template-file ./templateDefinition.yml --output-file output.yml
-            - jfrog rt upload ./templateDefinition.yml jfrogpipelines/$templateTarget/$VERSION/templateDefinition.yml --recursive=true
+            - jfrog rt upload ./templateDefinition.yml {{rootBucket}}/$templateTarget/$VERSION/templateDefinition.yml --recursive=true
             - |
               if test -f "./values.yml.example"; then
-                jfrog rt upload ./values.yml.example jfrogpipelines/$templateTarget/$VERSION/values.yml.example --recursive=true
+                jfrog rt upload ./values.yml.example {{rootBucket}}/$templateTarget/$VERSION/values.yml.example --recursive=true
               fi
             - |
               if test -f "./readme.md"; then
-                jfrog rt upload ./readme.md jfrogpipelines/$templateTarget/$VERSION/readme.md --recursive=true
+                jfrog rt upload ./readme.md {{rootBucket}}/$templateTarget/$VERSION/readme.md --recursive=true
               fi
             - popd
