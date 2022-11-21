@@ -20,8 +20,12 @@ pipelines:
     configuration:
       environmentVariables:
         readOnly:
-          templateTarget: {{ .Values.release_template.path }}
-          version: {{ .Values.release_template.version }}
+          templateTarget: 
+            default: {{ .Values.release_template.path }}
+            description: Please mention the path of your template from your scm repository, in this format: templates/<namespace>/name_of_the_template>
+          VERSION: 
+            default: {{ .Values.release_template.version }}
+            description: Please enter sementic version
     steps:
       - name: {{ .Values.release_template.stepName }}
         type: Bash
@@ -32,19 +36,35 @@ pipelines:
               trigger: false
         execution:
           onExecute:
+            - versionRegex='^([0-9]+\.){0,2}(\*|[0-9]+)$'
+            - |
+              if [[ $VERSION =~ $versionRegex ]]; then
+                echo "$VERSION is valid"
+              else
+                echo "Please enter a valid semantic version"
+                exit 1;
+              fi
+            - IFS='/'
+            - read -a pathArr <<< "$templateTarget"
+            - |
+              if [[ ${pathArr[0]} != 'templates' ]]; then
+                echo "templateTarget- $templateTarget should be in this format templates/<namespace>/name_of_the_template>"
+              elseif [[ ${pathArr[1]} == 'jfrog' ]]; then
+                echo "namespace cannot be jfrog, please choose a different namespace"
+              fi
             - pushd $res_my_temp_repo_resourcePath
             - pushd $templateTarget
             - touch values.yml
             - cp -vr $res_goTemplateBinary_resourcePath/pipelines-template ./pipelines-template
             - chmod +x ./pipelines-template
             - ./pipelines-template apply --values-file ./values.yml --template-file ./templateDefinition.yml --output-file output.yml
-            - jfrog rt upload ./templateDefinition.yml jfrogpipelines/$templateTarget/$version/templateDefinition.yml --recursive=true
+            - jfrog rt upload ./templateDefinition.yml jfrogpipelines/$templateTarget/$VERSION/templateDefinition.yml --recursive=true
             - |
               if test -f "./values.yml.example"; then
-                jfrog rt upload ./values.yml.example jfrogpipelines/$templateTarget/$version/values.yml.example --recursive=true
+                jfrog rt upload ./values.yml.example jfrogpipelines/$templateTarget/$VERSION/values.yml.example --recursive=true
               fi
             - |
               if test -f "./readme.md"; then
-                jfrog rt upload ./readme.md jfrogpipelines/$templateTarget/$version/readme.md --recursive=true
+                jfrog rt upload ./readme.md jfrogpipelines/$templateTarget/$VERSION/readme.md --recursive=true
               fi
             - popd
